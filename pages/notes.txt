@@ -1,0 +1,15 @@
+fetched_data = fetch_data(ein, detailed_url)
+            st.session_state['organizations_data'].append(fetched_data['organization_data'])
+            st.session_state['all_individuals_data'].append(fetched_data['individuals_data'])
+
+            # Display organization data and individuals data if available
+            
+            organization_data = fetched_data['organization_data']
+            st.subheader(organization_data.get('Business Name', 'Unknown'))
+            st.write(f"Organization data in the year {year}:")
+            st.json(fetched_data['organization_data'])
+            
+            if fetched_data['individuals_data']:
+                st.write(f"Individuals data in the year {year}:")
+                df_individuals = pd.DataFrame(fetched_data['individuals_data'])
+                st.dataframe(df_individuals)
