@@ -41,7 +41,10 @@ if data_type == "County":
 else:
     areas = metro_data[metro_data['State abv.'] == selected_state]['Areaname'].unique()
 
-selected_area = st.selectbox(f"Select {data_type} Area", areas)
+sorted_areas = sorted(areas)
+selected_area = st.selectbox(f"Select {data_type} Area", sorted_areas)
+
+#selected_area = st.selectbox(f"Select {data_type} Area", areas)
 
 # Filter the data based on selections
 if data_type == "County":

@@ -27,3 +27,4 @@ st.subheader("Notes")
 
 st.write("4.18.2024: Demo of 990 Search Tool")
 st.write("4.23.2024: Added Living Wage Dashboard")
+st.write("4.23.2024: Created Updated & Unupdated versions of 990 Search Tool")
