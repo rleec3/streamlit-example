@@ -22,6 +22,8 @@ county_data = load_data('County_Annual')  # Update with the correct sheet name f
 metro_data = load_data('Metro_Annual')  # Update with the correct sheet name for Metro data
 
 # Streamlit application layout
+banner_path = 'Horizontal_Banner_NoSC.png'
+st.image(banner_path, width=400)
 st.title("Living Wage Dashboard") 
 ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
 
