@@ -69,11 +69,19 @@ def fetch_data(ein, detailed_url):
                     else:
                         w_year_end = f"{fiscal_year_year - 1}-12-31"
                     organization_data["WYearEnd"] = w_year_end
+        #helper function
+        def get_text(section, xpaths, namespaces):
+            # Accept xpaths as a list to handle multiple possible tags
+            for xpath in xpaths:
+                result = section.xpath(xpath, namespaces=namespaces)
+                if result:
+                    return result[0]  # Return the first result found
+            return "Not Available"
         # Parse individuals' data
         individuals_data = []
         part_j_sections = tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990ScheduleJ/efile:RltdOrgOfficerTrstKeyEmplGrp', namespaces=ns)
         for section in part_j_sections:
-            name = section.xpath('.//efile:PersonNm/text()', namespaces=ns)[0] if section.xpath('.//efile:PersonNm/text()', namespaces=ns) else "Not Available"
+            name = get_text(section, ['.//efile:PersonNm/text()', './/efile:BusinessNameLine1Txt/text()'], ns)
             title = section.xpath('.//efile:TitleTxt/text()', namespaces=ns)[0] if section.xpath('.//efile:TitleTxt/text()', namespaces=ns) else "Not Available"
             compensation_data = {
                 'Base Compensation': section.xpath('.//efile:BaseCompensationFilingOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:BaseCompensationFilingOrgAmt/text()', namespaces=ns) else "Not Available",
@@ -95,7 +103,7 @@ def fetch_data(ein, detailed_url):
         individuals_data2 = []
         part_vii_sections = tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:Form990PartVIISectionAGrp', namespaces=ns)
         for section in part_vii_sections:
-            name = section.xpath('.//efile:PersonNm/text()', namespaces=ns)[0] if section.xpath('.//efile:PersonNm/text()', namespaces=ns) else "Not Available"
+            name = get_text(section, ['.//efile:PersonNm/text()', './/efile:BusinessNameLine1Txt/text()'], ns)
             title = section.xpath('.//efile:TitleTxt/text()', namespaces=ns)[0] if section.xpath('.//efile:TitleTxt/text()', namespaces=ns) else "Not Available"
             compensation_data2 = {
                 'Reportable Compensation (Part VII)': section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns) else "Not Available",
@@ -189,7 +197,7 @@ if st.button("Fetch Data for All Selected", key='fetch_data_button'):
             st.session_state['organizations_data'].append(fetched_data['organization_data'])
             st.session_state['all_individuals_data'].append(fetched_data['individuals_data'])
             # Display organization data and individuals data if available
-            st.write(f"Organization data for {ein} in the year {year}:")
+            #st.write(f"Organization data for {ein} in the year {year}:")
             organization_data = fetched_data['organization_data']
             st.subheader(organization_data.get('Business Name', 'Unknown'))
             st.write(f"Organization data in the year {year}:")
