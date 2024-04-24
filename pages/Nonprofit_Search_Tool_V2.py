@@ -251,10 +251,12 @@ if st.button("Generate Final Output Chart", key='generate_chart_button'):
                 }
                 # Append the row to the final chart data in session state
                 final_chart_data.append(chart_row)
+                st.session_state['final_chart_data'].append(chart_row)
     
     # Convert the final chart data to a DataFrame and display it
     final_df = pd.DataFrame(st.session_state['final_chart_data'])
     st.write(final_df)
+    #st.dataframe(final_df)
 
     if final_chart_data:
         edited_file = edit_excel_template(final_chart_data, '990TEMPLATE.xlsx')
