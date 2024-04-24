@@ -7,6 +7,7 @@ import streamlit_shadcn_ui as ui
 # Assuming 'path_to_file.xlsx' is the correct path to your Excel file
 file_path = 'fbc_data_2024_V1.2.xlsx'
 
+st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png')
 # Function to load data
 @st.cache_data
 def load_data(sheet_name):
@@ -28,7 +29,7 @@ ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex 
 with st.sidebar:
     data_type = st.radio("Select Data Type", ("County", "Metro"))
     selected_state = st.selectbox("Select State", county_data['State abv.'].unique())
-    provider_filter = st.multiselect("Select Provider", [1, 2])
+    provider_filter = st.multiselect("Select Providers", [1, 2])
     dependents_filter = st.multiselect("Select Dependents", [0, 1, 2, 3, 4])
 
     # Dynamic selection for monetary columns to include in total
