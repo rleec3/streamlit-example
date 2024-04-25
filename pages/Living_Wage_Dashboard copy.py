@@ -8,10 +8,6 @@ import streamlit_shadcn_ui as ui
 file_path = 'fbc_data_2024_V1.2.xlsx'
 
 st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png')
-
-
-
-
 # Function to load data
 @st.cache_data
 def load_data(sheet_name):
@@ -25,38 +21,13 @@ def load_data(sheet_name):
 county_data = load_data('County_Annual')  # Update with the correct sheet name for County data
 metro_data = load_data('Metro_Annual')  # Update with the correct sheet name for Metro data
 
-
-
 # Streamlit application layout
 banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
 #ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
-
-st.markdown("""
-<style>
-.flex-center-vertical {
-    display: flex;
-    align-items: center; /* Aligns vertically */
-    justify-content: center; /* Aligns horizontally */
-    height: 100%;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-
 st.title("Living Wage Dashboard") 
 st.caption('Source: Economic Policy Institute Family Budget Calculator, January 2024. Data are in 2023 dollars.')
-
-col1, col2 = st.columns([2, 2])  # Here, col1 is three times wider than col2
-
-# Place a caption in each column
-with col1:
-    st.caption('⚪ : Data not utilized in client deliverables')
-
-with col2:
-    st.caption('🟢 : Data utilized in client deliverables')
-#ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
+ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
 
 # Filter selection sidebar
 with st.sidebar:
@@ -107,66 +78,43 @@ final_output = filtered_data[columns_to_include]
 
 final_output['Provider, Dependent Configuration'] = final_output['Provider'].astype(str) + ',' + final_output['Dependent'].astype(str)
 
-# Display the final output in the Streamlit app
-#st.header("🟢 Annualized Living Wage w/ Healthcare Credit")
-st.markdown("""
-    <h1>
-        <span style='font-size: 20px;'>⚪</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Living Wage</span> <!-- Text with smaller font size -->
-    </h1>
-    """, unsafe_allow_html=True)
-st.dataframe(final_output)
+# Apply monetary formatting
+monetary_formatter = {col: "${:,.0f}" for col in selected_monetary_columns}
+monetary_formatter.update({'Total': "${:,.0f}"})  # Ensure 'Total' column is also formatted
 
+# Display the final output in the Streamlit app with formatting
+st.header("Annualized Living Wage") 
+st.dataframe(final_output.style.format(monetary_formatter))
 
 # Apply a 20% Healthcare credit and recalculate the total
 if 'Healthcare' in final_output.columns:
     healthcare_credit_df = final_output.copy()
-    healthcare_credit_df['Healthcare'] *= 0.20  # Apply the 20% credit
+    healthcare_credit_df['Healthcare'] *= 0.80  # Apply the 20% credit, hence multiply by 0.80
 
-    # Check if 'Total' needs to be recalculated
-    if 'Total' in healthcare_credit_df.columns and 'Healthcare' in selected_monetary_columns:
+    if 'Total' in healthcare_credit_df.columns:
         healthcare_credit_df['Total'] = healthcare_credit_df[selected_monetary_columns].astype(float).sum(axis=1)
 
-    # Display the new Living Wage table with Healthcare credit
-    st.markdown("""
-    <h1>
-        <span style='font-size: 20px;'>🟢</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Living Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
-    </h1>
-    """, unsafe_allow_html=True) 
-    st.dataframe(healthcare_credit_df)
+    st.header("Annualized Living Wage w/ Healthcare Credit") 
+    st.dataframe(healthcare_credit_df.style.format(monetary_formatter))
 
 if 'Other Necessities ' in healthcare_credit_df.columns:
     thriving_wage_df = healthcare_credit_df.copy()
     thriving_wage_df['Other Necessities '] *= 2  # Double the values in 'Other Necessities'
 
-    # Check if 'Total' needs to be recalculated
-    if 'Total' in thriving_wage_df.columns and 'Other Necessities ' in selected_monetary_columns:
-        # Only include the selected monetary columns for the new total
+    if 'Total' in thriving_wage_df.columns:
         thriving_wage_df['Total'] = thriving_wage_df[selected_monetary_columns].astype(float).sum(axis=1)
 
-    # Display the new Thriving Wage table
-    st.markdown("""
-    <h1>
-        <span style='font-size: 20px;'>🟢</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Thriving Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
-    </h1>
-    """, unsafe_allow_html=True)  
-    st.dataframe(thriving_wage_df)
+    st.header("Annualized Thriving Wage") 
+    st.dataframe(thriving_wage_df.style.format(monetary_formatter))
 
-
-# comparison chart
-
-
-filtered_data['Provider, Dependent Configuration'] = filtered_data['Provider'].astype(str) + ',' + filtered_data['Dependent'].astype(str)
-# Create the 'Living Wage' and 'Thriving Wage' comparison DataFrame
+# Comparison chart
 comparison_df = pd.DataFrame({
     'Provider, Dependent Configuration': filtered_data['Provider, Dependent Configuration'],
-    'Living Wage': healthcare_credit_df['Total'] / 1000,  # Divide by 1000 to match the desired unit
-    'Thriving Wage': thriving_wage_df['Total'] / 1000  # Divide by 1000 to match the desired unit
+    'Living Wage': healthcare_credit_df['Total'] / 1000,
+    'Thriving Wage': thriving_wage_df['Total'] / 1000
 })
 
-# Display the comparison table
+# Display the comparison table with formatting
 st.header(f"Household Living Wage for {selected_area}, {selected_state}")
 st.table(comparison_df.style.format({'Living Wage': '${:,.0f}', 'Thriving Wage': '${:,.0f}'}))
 
