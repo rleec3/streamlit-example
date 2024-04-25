@@ -26,6 +26,9 @@ try:
 except FileNotFoundError:
     comments_df = pd.DataFrame(columns=['ID', 'Timestamp', 'Name', 'Comment', 'Replies', 'Upvotes', 'Status'])
 
+
+comments_df['Replies'] = comments_df['Replies'].astype(str)
+
 # Function to save DataFrame to Excel
 def save_comments(df):
     df.to_excel(excel_file_path, index=False)
@@ -41,10 +44,10 @@ with col1:  # Column for adding a new comment
         new_id = len(comments_df) + 1 if not comments_df.empty else 1
         new_comment = {
             'ID': new_id,
-            'Timestamp': datetime.now().date(),  # Use datetime.date() to ensure we only get the date
+            'Timestamp': datetime.now(),  # Store the full datetime
             'Name': name,
             'Comment': comment,
-            'Replies': '',
+            'Replies': '',  # Initialize as an empty string
             'Upvotes': 0,
             'Status': STATUS_OPTIONS['Not Reviewed']
         }
@@ -60,10 +63,12 @@ with col2:  # Column for replying to an existing comment
             submit_reply = st.form_submit_button('Submit Reply')
         if submit_reply and reply_text and reply_name:
             comment_index = comments_df.index[comments_df['ID'] == comment_to_reply_id].tolist()[0]
+            # Ensure existing replies is a string before appending
+            existing_replies = comments_df.at[comment_index, 'Replies']
+            existing_replies = existing_replies if existing_replies != 'nan' else ''
             new_reply = f"{reply_name}: {reply_text}\n"
-            comments_df.at[comment_index, 'Replies'] = (comments_df.at[comment_index, 'Replies'] or '') + new_reply
+            comments_df.at[comment_index, 'Replies'] = existing_replies + new_reply
             save_comments(comments_df)
-
 # Layout for changing status of comments
 with st.form('status_form'):
     col1, col2 = st.columns(2)

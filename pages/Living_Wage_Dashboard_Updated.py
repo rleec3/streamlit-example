@@ -45,7 +45,7 @@ st.markdown("""
 
 
 
-st.title("Living Wage Dashboard") 
+st.header("Living Wage Dashboard") 
 st.caption('Source: Economic Policy Institute Family Budget Calculator, January 2024. Data are in 2023 dollars.')
 
 col1, col2 = st.columns([2, 2])  # Here, col1 is three times wider than col2
