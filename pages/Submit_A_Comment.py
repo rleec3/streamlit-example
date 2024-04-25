@@ -2,6 +2,14 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+
+
+#Title
+banner_path = 'Horizontal_Banner_NoSC.png'
+st.image(banner_path, width=400)
+st.title("Submit A Comment")
+
+
 # Path to the Excel file
 excel_file_path = 'comments.xlsx'
 
