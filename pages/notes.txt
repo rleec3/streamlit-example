@@ -1,15 +1,101 @@
-fetched_data = fetch_data(ein, detailed_url)
-            st.session_state['organizations_data'].append(fetched_data['organization_data'])
-            st.session_state['all_individuals_data'].append(fetched_data['individuals_data'])
+import streamlit as st
+import pandas as pd
+from datetime import datetime
 
-            # Display organization data and individuals data if available
-            
-            organization_data = fetched_data['organization_data']
-            st.subheader(organization_data.get('Business Name', 'Unknown'))
-            st.write(f"Organization data in the year {year}:")
-            st.json(fetched_data['organization_data'])
-            
-            if fetched_data['individuals_data']:
-                st.write(f"Individuals data in the year {year}:")
-                df_individuals = pd.DataFrame(fetched_data['individuals_data'])
-                st.dataframe(df_individuals)
+# Constants for status categories
+STATUS_OPTIONS = {
+    "Solved": "✅",
+    "In Progress": "🚧",
+    "Not Reviewed": "❔"
+}
+
+# Path to the Excel file
+excel_file_path = 'comments.xlsx'
+
+# Load or initialize the comments DataFrame
+try:
+    comments_df = pd.read_excel(excel_file_path)
+except FileNotFoundError:
+    comments_df = pd.DataFrame(columns=['ID', 'Date', 'Name', 'Comment', 'Replies', 'Upvotes', 'Status'])
+
+# Function to save DataFrame to Excel
+def save_comments(df):
+    df.to_excel(excel_file_path, index=False)
+
+# Layout for adding new comments and changing the status of existing ones
+with st.form('comment_form'):
+    col1, col2 = st.columns(2)
+    with col1:
+        name = st.text_input("Name:")
+        comment = st.text_area("Leave a comment or question:")
+    with col2:
+        submit_comment = st.form_submit_button('Submit Comment')
+    if submit_comment and comment:
+        new_id = len(comments_df) + 1 if not comments_df.empty else 1
+        comments_df = pd.concat([comments_df, pd.DataFrame.from_records([{
+            'ID': new_id,
+            'Date': datetime.now().date(),
+            'Name': name,
+            'Comment': comment,
+            'Replies': '',
+            'Upvotes': 0,
+            'Status': STATUS_OPTIONS['Not Reviewed']  # Use the emoji for 'Not Reviewed'
+        }])], ignore_index=True)
+        save_comments(comments_df)
+
+# Layout for replying to comments
+with st.form('reply_form'):
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        comment_to_reply_id = st.selectbox('Select a comment to reply to:', comments_df['ID'])
+        reply_name = st.text_input("Your name (for reply):")
+        reply_text = st.text_area("Write your reply:")
+    with col2:
+        submit_reply = st.form_submit_button('Submit Reply')
+    if submit_reply and reply_text and reply_name:
+        comment_index = comments_df.index[comments_df['ID'] == comment_to_reply_id].tolist()[0]
+        new_reply = f"{reply_name}: {reply_text}\n"
+        comments_df.at[comment_index, 'Replies'] = comments_df.at[comment_index, 'Replies'] + new_reply
+        save_comments(comments_df)
+
+# Layout for changing status of comments
+with st.form('status_form'):
+    col1, col2 = st.columns(2)
+    with col1:
+        comment_to_change_status_id = st.selectbox('Select a comment to change status:', comments_df['ID'], key='status_id')
+    with col2:
+        status_to_change = st.selectbox("Change Status", list(STATUS_OPTIONS.keys()), key='status_select')
+        submit_status = st.form_submit_button('Update Status')
+    if submit_status:
+        comment_index = comments_df.index[comments_df['ID'] == comment_to_change_status_id].tolist()[0]
+        comments_df.at[comment_index, 'Status'] = STATUS_OPTIONS[status_to_change]
+        save_comments(comments_df)
+
+# Display the comments and replies
+st.write("## Comments and Replies")
+for index, row in comments_df.iterrows():
+    cols = st.columns([3, 2])
+    with cols[0]:  # Display comment info, upvotes and delete button
+        st.markdown(f"**Comment ID {row['ID']} by {row['Name']}**")
+        st.write(f"Date: {row['Date'].strftime('%Y-%m-%d')}")
+        st.write(f"Comment: *{row['Comment']}*")
+        st.write(f"Status: {row['Status']}")
+        upvote_button, delete_button = st.columns([1, 1])
+        with upvote_button:
+            if st.button('👍 Upvote', key=f"upvote_{index}"):
+                comments_df.at[index, 'Upvotes'] += 1
+                save_comments(comments_df)
+            st.write(f"Upvotes: {row['Upvotes']}")
+        with delete_button:
+            if st.button('Delete', key=f"delete_{index}"):
+                comments_df = comments_df.drop(index)
+                comments_df.reset_index(drop=True, inplace=True)
+                save_comments(comments_df)
+    with cols[1]:  # Display replies
+        st.write("**Replies:**")
+        if row['Replies']:
+            for reply in row['Replies'].split('\n'):
+                if reply:  # Ensure there's something to print
+                    st.write(reply)
+        else:
+            st.write("*No replies yet.*")

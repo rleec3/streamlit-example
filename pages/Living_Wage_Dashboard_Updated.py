@@ -7,7 +7,7 @@ import streamlit_shadcn_ui as ui
 # Assuming 'path_to_file.xlsx' is the correct path to your Excel file
 file_path = 'fbc_data_2024_V1.2.xlsx'
 
-st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png')
+st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png', layout='wide')
 
 
 

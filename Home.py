@@ -12,7 +12,7 @@ from streamlit_shadcn_ui import slider, input, textarea, radio_group, switch
 #     st.markdown(f.read())
 
 # ui.date_picker()
-st.set_page_config(page_title='Home', page_icon='C3_Only_Ball.png')
+st.set_page_config(page_title='Home', page_icon='C3_Only_Ball.png', layout='wide')
 
 st.header("C3 Tool Libray")
 ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")

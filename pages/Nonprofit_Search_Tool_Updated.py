@@ -7,7 +7,7 @@ from lxml import etree
 import openpyxl
 from io import BytesIO
 # Function to fetch years and corresponding URLs for the given EIN
-st.set_page_config(page_title='Nonprofit Search Tool', page_icon='C3_Only_Ball.png')
+st.set_page_config(page_title='Nonprofit Search Tool', page_icon='C3_Only_Ball.png', layout='wide')
 def fetch_years(ein):
     base_url = "https://projects.propublica.org"
     url = f"{base_url}/nonprofits/organizations/{ein}"
