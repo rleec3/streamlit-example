@@ -112,7 +112,7 @@ final_output['Provider, Dependent Configuration'] = final_output['Provider'].ast
 st.markdown("""
     <h1>
         <span style='font-size: 20px;'>⚪</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Living Wage</span> <!-- Text with smaller font size -->
+        <span style='font-weight: normal; font-size: 30px;'>Annualized Living Wage</span> <!-- Text with smaller font size -->
     </h1>
     """, unsafe_allow_html=True)
 st.dataframe(final_output)
@@ -131,7 +131,7 @@ if 'Healthcare' in final_output.columns:
     st.markdown("""
     <h1>
         <span style='font-size: 20px;'>🟢</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Living Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
+        <span style='font-weight: normal; font-size: 30px;'>Annualized Living Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
     </h1>
     """, unsafe_allow_html=True) 
     st.dataframe(healthcare_credit_df)
@@ -149,7 +149,7 @@ if 'Other Necessities ' in healthcare_credit_df.columns:
     st.markdown("""
     <h1>
         <span style='font-size: 20px;'>🟢</span> <!-- Emoji with larger font size -->
-        <span style='font-size: 30px;'>Annualized Thriving Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
+        <span style='font-weight: normal; font-size: 30px;'>Annualized Thriving Wage w/ Healthcare Credit</span> <!-- Text with smaller font size -->
     </h1>
     """, unsafe_allow_html=True)  
     st.dataframe(thriving_wage_df)
@@ -166,8 +166,16 @@ comparison_df = pd.DataFrame({
     'Thriving Wage': thriving_wage_df['Total'] / 1000  # Divide by 1000 to match the desired unit
 })
 
-# Display the comparison table
-st.header(f"Household Living Wage for {selected_area}, {selected_state}")
+
+
+
+
+st.markdown(f"""
+    <h1 style='font-weight: normal; font-size: 30px;'>
+        Household Living Wage for {selected_area}, {selected_state}
+    </h1>
+    """, unsafe_allow_html=True)
+
 st.table(comparison_df.style.format({'Living Wage': '${:,.0f}', 'Thriving Wage': '${:,.0f}'}))
 
 # Create the bar chart comparison
@@ -194,5 +202,9 @@ grouped_bar_chart = alt.Chart(long_df).mark_bar().encode(
 )
 
 # Display the chart
-st.header(f"Household Living Wage for {selected_area}, {selected_state}")
+st.markdown(f"""
+    <h1 style='font-weight: normal; font-size: 30px;'>
+        Household Living Wage for {selected_area}, {selected_state}
+    </h1>
+    """, unsafe_allow_html=True)
 st.altair_chart(grouped_bar_chart, use_container_width=True)
