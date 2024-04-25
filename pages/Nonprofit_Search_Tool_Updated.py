@@ -157,7 +157,7 @@ def edit_excel_template(data, template_path):
 banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
 st.title("Nonprofit Organization Data Fetcher")
-num_orgs = st.number_input("How many organizations do you want to fetch?", min_value=1, max_value=10, value=1, key="num_orgs")
+num_orgs = st.number_input("How many organizations do you want to fetch?", min_value=1, max_value=30, value=1, key="num_orgs")
 # Initialize or reset session state variables as needed
 if 'organizations_data' not in st.session_state:
     st.session_state['organizations_data'] = []
