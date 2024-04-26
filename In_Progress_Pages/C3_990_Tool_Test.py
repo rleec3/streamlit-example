@@ -34,31 +34,42 @@ def fetch_years(ein):
                 years[year] = "XML link not found"  # Handle cases where no XML link is found
     return years
 #helper function to extract text 
-def get_text(soup, selector):
-    element = soup.select_one(selector)
-    return element.text.strip() if element else "Not Available"
+#def get_text(soup, selector):
+    #element = soup.select_one(selector)
+    #return element.text.strip() if element else "Not Available"
 # Function to fetch detailed data from a URL associated with a selected year
 # Define namespaces for XML parsing
 ns = {'efile': 'http://www.irs.gov/efile'}
+def get_text(element, xpaths, namespaces):
+    """
+    Attempt to fetch data from a list of XPaths.
+    Returns the text from the first successful XPath query or "Not Available" if none match.
+    """
+    for xpath in xpaths:
+        result = element.xpath(xpath, namespaces=namespaces)
+        if result:
+            return result[0]  # Return the first result found
+    return "Not Available"
 # Fetch and parse organization and individual data
 def fetch_data(ein, detailed_url):
     #url = full_url
+    
     response = requests.get(detailed_url)
     if response.status_code == 200:
         tree = etree.fromstring(response.content)
         
         organization_data = {
             'EIN': ein,
-            'Business Name': tree.xpath('//efile:Return/efile:ReturnHeader/efile:Filer/efile:BusinessName/efile:BusinessNameLine1Txt/text()', namespaces=ns)[0],
-            'City': tree.xpath('//efile:Return/efile:ReturnHeader/efile:Filer/efile:USAddress/efile:CityNm/text()', namespaces=ns)[0] if tree.xpath('//efile:Return/efile:ReturnHeader/efile:Filer/efile:USAddress/efile:CityNm/text()', namespaces=ns) else "Not Available",
-            'State': tree.xpath('//efile:Return/efile:ReturnHeader/efile:Filer/efile:USAddress/efile:StateAbbreviationCd/text()', namespaces=ns)[0],
-            'Fiscal Year End': tree.xpath('//efile:Return/efile:ReturnHeader/efile:TaxPeriodEndDt/text()', namespaces=ns)[0],
-            'Total Assets EOY': tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:TotalAssetsEOYAmt/text()', namespaces=ns)[0],
-            'Total Expenses': tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:CYTotalExpensesAmt/text()', namespaces=ns)[0],
-            'Total Revenue': tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:CYTotalRevenueAmt/text()', namespaces=ns)[0],
-            'Employee Count': tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:TotalEmployeeCnt/text()', namespaces=ns)[0],
-            # Add additional organization fields as necessary
+            'Business Name': get_text(tree, ['//efile:Return/efile:ReturnHeader/efile:Filer/efile:BusinessName/efile:BusinessNameLine1Txt/text()'], ns),
+            'City': get_text(tree, ['//efile:Return/efile:ReturnHeader/efile:Filer/efile:USAddress/efile:CityNm/text()'], ns),
+            'State': get_text(tree, ['//efile:Return/efile:ReturnHeader/efile:Filer/efile:USAddress/efile:StateAbbreviationCd/text()'], ns),
+            'Fiscal Year End': get_text(tree, ['//efile:Return/efile:ReturnHeader/efile:TaxPeriodEndDt/text()'], ns),
+            'Total Assets EOY': get_text(tree, ['//efile:Return/efile:ReturnData/efile:IRS990/efile:TotalAssetsEOYAmt/text()', './/efile:FMVAssetsEOYAmt/text()'], ns),
+            'Total Expenses': get_text(tree, ['//efile:Return/efile:ReturnData/efile:IRS990/efile:CYTotalExpensesAmt/text()', './/efile:TotalExpensesRevAndExpnssAmt/text()'], ns),
+            'Total Revenue': get_text(tree, ['//efile:Return/efile:ReturnData/efile:IRS990/efile:CYTotalRevenueAmt/text()', './/efile:TotalRevAndExpnssAmt/text()'], ns), 
+            'Employee Count': get_text(tree, ['//efile:Return/efile:ReturnData/efile:IRS990/efile:TotalEmployeeCnt/text()'], ns)
         }
+
         fiscal_year_end_text = organization_data["Fiscal Year End"]
         if "-" in fiscal_year_end_text:
                 fiscal_year_parts = fiscal_year_end_text.split("-")
@@ -71,13 +82,13 @@ def fetch_data(ein, detailed_url):
                         w_year_end = f"{fiscal_year_year - 1}-12-31"
                     organization_data["WYearEnd"] = w_year_end
         #helper function
-        def get_text(section, xpaths, namespaces):
+        #def get_text(section, xpaths, namespaces):
             # Accept xpaths as a list to handle multiple possible tags
-            for xpath in xpaths:
-                result = section.xpath(xpath, namespaces=namespaces)
-                if result:
-                    return result[0]  # Return the first result found
-            return "Not Available"
+            #for xpath in xpaths:
+                #result = section.xpath(xpath, namespaces=namespaces)
+                #if result:
+                    #return result[0]  # Return the first result found
+            #return "Not Available"
         # Parse individuals' data
         individuals_data = []
         part_j_sections = tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990ScheduleJ/efile:RltdOrgOfficerTrstKeyEmplGrp', namespaces=ns)
@@ -105,7 +116,7 @@ def fetch_data(ein, detailed_url):
         part_vii_sections = tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990/efile:Form990PartVIISectionAGrp', namespaces=ns)
         for section in part_vii_sections:
             name = get_text(section, ['.//efile:PersonNm/text()', './/efile:BusinessNameLine1Txt/text()'], ns)
-            title = section.xpath('.//efile:TitleTxt/text()', namespaces=ns)[0] if section.xpath('.//efile:TitleTxt/text()', namespaces=ns) else "Not Available"
+            title = get_text(section, ['.//efile:TitleTxt/text()', './/efile:TitleTxt/text()'], ns)
             compensation_data2 = {
                 'Reportable Compensation (Part VII)': section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns) else "Not Available",
                 'Reportable Compensation From Rltd Org (Part VII)': section.xpath('.//efile:ReportableCompFromRltdOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ReportableCompFromRltdOrgAmt/text()', namespaces=ns) else "Not Available",
@@ -115,16 +126,40 @@ def fetch_data(ein, detailed_url):
             individual_data2 = {'Name': name, 'Title': title}
             individual_data2.update(compensation_data2)
             individuals_data2.append(individual_data2)
+            
+        #990PF
+        individuals_data3 = []
+        part_pf_sections = tree.xpath('//efile:Return/efile:ReturnData/efile:IRS990PF/efile:OfficerDirTrstKeyEmplInfoGrp/efile:OfficerDirTrstKeyEmplGrp', namespaces=ns)
+        for section in part_pf_sections:
+            name = get_text(section, ['.//efile:PersonNm/text()', './/efile:BusinessNameLine1Txt/text()'], ns)
+            title = get_text(section, ['.//efile:TitleTxt/text()'], ns)
+            compensation_data3 = {
+                'Reportable Compensation (PF)': section.xpath('.//efile:CompensationAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:CompensationAmt/text()', namespaces=ns) else "Not Available",
+                'Employee Benefit Amount (PF)': section.xpath('.//efile:EmployeeBenefitProgramAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:EmployeeBenefitProgramAmt/text()', namespaces=ns) else "Not Available",
+                'Other Compensation (PF)': section.xpath('.//efile:ExpenseAccountOtherAllwncAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ExpenseAccountOtherAllwncAmt/text()', namespaces=ns) else "Not Available",
+                'Avg Hr Per Week (PF)': section.xpath('.//efile:AverageHrsPerWkDevotedToPosRt/text()', namespaces=ns)[0] if section.xpath('.//efile:AverageHrsPerWkDevotedToPosRt/text()', namespaces=ns) else "Not Available",
+            }
+            individual_data3 = {'Name': name, 'Title': title}
+            individual_data3.update(compensation_data3)
+            individuals_data3.append(individual_data3)
         #return {'organization_data': organization_data, 'individuals_data': individuals_data, 'individuals_data2': individual_data2}
     #else:
         #return {'organization_data': {}, 'individuals_data': [], 'individuals_data2': []}
-        for individual in individuals_data:
-            corresponding_entry = next((entry for entry in individuals_data2 if entry['Name'] == individual['Name']), None)
-            if corresponding_entry:
-                individual.update(corresponding_entry)
-        return {'organization_data': organization_data, 'individuals_data': individuals_data}
-    else:
-        return {'organization_data': {}, 'individuals_data': []}
+        # Combine all individual data
+        combined_individuals_data = individuals_data + individuals_data2 + individuals_data3
+        unique_individuals = {individual['Name']: individual for individual in combined_individuals_data}.values()
+
+        # Update individual records with merged data
+        final_individuals_data = []
+        for individual in unique_individuals:
+            merged_data = {}
+            for dataset in [individuals_data, individuals_data2, individuals_data3]:
+                for data in dataset:
+                    if data['Name'] == individual['Name']:
+                        merged_data.update(data)
+            final_individuals_data.append(merged_data)
+
+        return {'organization_data': organization_data, 'individuals_data': final_individuals_data}
 # Streamlit UI components
 
 def edit_excel_template(data, template_path):
@@ -252,9 +287,11 @@ if st.button("Generate Final Output Chart", key='generate_chart_button'):
                     "Total Expenses": organization_data.get('Total Expenses', 'Not Available'),
                     "Total Revenue": organization_data.get('Total Revenue', 'Not Available'),
                     "Employee Count": organization_data.get('Employee Count', 'Not Available'),
-                    "Base Compensation": selected_person_data.get('Base Compensation', 'Not Available'),
+                    "Base Compensation": selected_person_data.get('Base Compensation', 
+                selected_person_data.get('Reportable Compensation (PF)', 'Not Available')),
                     "Bonus": selected_person_data.get('Bonus', 'Not Available'),
-                    "Other Compensation": selected_person_data.get('Other Compensation', 'Not Available'),
+                    "Other Compensation": selected_person_data.get('Other Compensation',
+                selected_person_data.get('Other Compensation (PF)', 'Not Available')),
                     "Deferred Compensation": selected_person_data.get('Deferred Compensation', 'Not Available'),
                     "Nontaxable Benefits": selected_person_data.get('Nontaxable Benefits', 'Not Available'),
                     "Total Compensation": selected_person_data.get('Total Compensation', 'Not Available'),
