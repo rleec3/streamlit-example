@@ -142,7 +142,7 @@ if 'Other Necessities ' in healthcare_credit_df.columns:
     thriving_wage_df['Other Necessities '] *= 2  # Double the values in 'Other Necessities'
 
     # Check if 'Total' needs to be recalculated
-    if 'Total' in thriving_wage_df.columns and 'Other Necessities ' in selected_monetary_columns:
+    if 'Total' in thriving_wage_df.columns:
         # Only include the selected monetary columns for the new total
         thriving_wage_df['Total'] = thriving_wage_df[selected_monetary_columns].astype(float).sum(axis=1)
 
