@@ -99,3 +99,13 @@ for index, row in comments_df.iterrows():
                     st.write(reply)
         else:
             st.write("*No replies yet.*")
+
+
+
+[theme]
+base="light"
+primaryColor="#00485F"
+backgroundColor="white"
+secondaryBackgroundColor="#00485F"
+textColor="#262730"
+#font="sans serif"
