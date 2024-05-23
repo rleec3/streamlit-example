@@ -3,7 +3,6 @@ import streamlit as st
 import openpyxl
 import pandas as pd
 import streamlit_shadcn_ui as ui
-from io import BytesIO
 
 # Assuming 'path_to_file.xlsx' is the correct path to your Excel file
 file_path = 'fbc_data_2024_V1.2.xlsx'
@@ -142,7 +141,7 @@ if 'Other Necessities ' in healthcare_credit_df.columns:
     thriving_wage_df['Other Necessities '] *= 2  # Double the values in 'Other Necessities'
 
     # Check if 'Total' needs to be recalculated
-    if 'Total' in thriving_wage_df.columns:
+    if 'Total' in thriving_wage_df.columns and 'Other Necessities ' in selected_monetary_columns:
         # Only include the selected monetary columns for the new total
         thriving_wage_df['Total'] = thriving_wage_df[selected_monetary_columns].astype(float).sum(axis=1)
 
@@ -209,61 +208,3 @@ st.markdown(f"""
     </h1>
     """, unsafe_allow_html=True)
 st.altair_chart(grouped_bar_chart, use_container_width=True)
-
-
-
-
-
-# Create and download modified Excel file
-# Note: Replace 'some_calculation_for_living' and 'some_calculation_for_thriving' with actual calculations or source columns.
-
-
-
-# Now, ensure these columns are included when you process and filter `final_output`
-st.dataframe(comparison_df)
-
-def save_and_load_excel():
-    workbook = openpyxl.load_workbook('Living_Wage_Template.xlsx')
-    sheet = workbook["LW_TW_Exhibit"]
-    
-    merged_cells_ranges = list(sheet.merged_cells.ranges)
-    # Unmerge all merged cells temporarily
-    for merged_range in merged_cells_ranges:
-        sheet.unmerge_cells(str(merged_range))
-    # Assuming merged cells have been handled as needed
-    # Reset the DataFrame index to ensure continuity
-    comparison_df.reset_index(drop=True, inplace=True)
-
-    # Start writing from row 4 in the Excel sheet
-    start_row = 4
-
-    # Clear existing data if needed
-    for row in sheet.iter_rows(min_row=start_row, max_row=sheet.max_row, min_col=1, max_col=3):
-        for cell in row:
-            cell.value = None  # Clear the cell value
-
-    # Write new data from the DataFrame to Excel
-    for index, row in comparison_df.iterrows():
-        cell_row = start_row + index  # Index is now aligned with DataFrame row
-        sheet[f'A{cell_row}'].value = row['Provider, Dependent Configuration']
-        sheet[f'B{cell_row}'].value = round(row['Living Wage'], 2)  # Optionally round the values
-        sheet[f'C{cell_row}'].value = round(row['Thriving Wage'], 2)
-    # Save the workbook to a BytesIO stream for download
-    for merged_range in merged_cells_ranges:
-        sheet.merge_cells(str(merged_range))
-
-
-
-    excel_stream = BytesIO()
-    workbook.save(excel_stream)
-    excel_stream.seek(0)
-    return excel_stream
-
-if st.button('Save Changes to Excel'):
-    modified_excel = save_and_load_excel()
-    st.download_button(
-        label="Download Modified Excel File",
-        data=modified_excel,
-        file_name="Modified_Living_Wage_Template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
