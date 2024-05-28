@@ -1,0 +1,111 @@
+body {
+    color: #00485F;
+    background-color: #00485F;
+}
+
+.stButton>label {
+    color: #00485F;
+    background-color: #4F8BF9;
+    border-radius: 50%;
+    height: 3em;
+    width: 3em;
+}
+
+.stTextInput>label {
+    color: #00485F;
+    background-color:#00485F;
+}
+
+.css-vk3wp9 eczjsme11 {
+    color: #00485F !important;
+    background-color:#00485F !important
+}
+
+---------------------
+
+/*started here*/
+
+  /* Select Box */
+  .stSelectbox>label{
+    background-color: #1f1cd6;
+    position: absolute;
+    left: 0%;
+    padding: 0.31rem;
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    z-index:1;
+    min-width: 5.5rem;
+    height: 100%;
+    text-align: center;
+    font-size: 14px;;
+}
+
+.stTextInput>label:hover{
+    background-color: #f35f2e;
+    position: absolute;
+    left: 0%;
+    padding: 0.31rem;
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    min-width: 5.5rem;
+    max-width: 100%;
+    height: 100%;
+    text-align: center;
+    font-size: 14px;
+    text-overflow: none;
+    z-index: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+} 
+
+
+  /* Multi Select */
+  .stMultiSelect>label{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #00B7e0;
+    position: absolute;
+    left: 0%;
+    bottom: 25%;
+    height: 100%;
+    padding: 0.31rem;
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    z-index:1;
+    min-width: 5.5rem;
+    text-align: center;
+    font-size: 14px;
+
+}
+
+.stMultiSelect>div>div>div:first-child{
+    position: relative;
+    left: 0rem;
+    padding: 0rem;
+    margin-left: 6rem;
+    width: 10rem;
+}
+
+.stMultiSelect>div>div:hover{
+    border: 2px solid #e22bca;
+}
+
+
+.stSlider>div>div>div:first-child{
+    height: 1rem;
+}
+
+.stSlider>div>div>div{
+    font-weight: bold;
+}
+
+.stSlider>div>div>div>div>div{
+    font-weight: bold;
+}
+
+
+
+.stSlider>div>div>div>div{
+    background-color: white;
+}

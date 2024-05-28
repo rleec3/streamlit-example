@@ -5,10 +5,31 @@ import pandas as pd
 import streamlit_shadcn_ui as ui
 from io import BytesIO
 
+
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def remote_css(url):
+    st.markdown(f'<link href="{url}" rel="stylesheet">', unsafe_allow_html=True)    
+
+def icon(icon_name):
+    st.markdown(f'<i class="material-icons">{icon_name}</i>', unsafe_allow_html=True)
+
+local_css("CSS/streamlit_copy.css")
+remote_css('https://fonts.googleapis.com/icon?family=Material+Icons')
+
+icon("search")
+#selected = st.text_input("", "Search...")
+#button_clicked = st.button("OK")
+
+
+
+
 # Assuming 'path_to_file.xlsx' is the correct path to your Excel file
 file_path = 'fbc_data_2024_V1.2.xlsx'
 
-st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png', layout='wide')
+#st.set_page_config(page_title='Living Wage Dashboard', page_icon='C3_Only_Ball.png', layout='wide')
 
 
 
