@@ -6,6 +6,7 @@ import pandas as pd
 from lxml import etree
 import openpyxl
 from io import BytesIO
+from datetime import datetime
 # Function to fetch years and corresponding URLs for the given EIN
 st.set_page_config(page_title='Nonprofit Search Tool', page_icon='C3_Only_Ball.png', layout='wide')
 def fetch_years(ein):
@@ -105,7 +106,7 @@ def fetch_data(ein, detailed_url):
                 'Reportable Compensation (Part VII)': section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ReportableCompFromOrgAmt/text()', namespaces=ns) else "Not Available",
                 'Reportable Compensation From Rltd Org (Part VII)': section.xpath('.//efile:ReportableCompFromRltdOrgAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:ReportableCompFromRltdOrgAmt/text()', namespaces=ns) else "Not Available",
                 'Other Compensation (Part VII)': section.xpath('.//efile:OtherCompensationAmt/text()', namespaces=ns)[0] if section.xpath('.//efile:OtherCompensationAmt/text()', namespaces=ns) else "Not Available",
-                'Avg Hr Per Week (Part VII)': section.xpath('.//efile:AverageHoursPerWeekRt/text()', namespaces=ns)[0] if section.xpath('.//efile:AverageHoursPerWeekRt/text()', namespaces=ns) else "Not Available",
+                'Avg Hr Per Week (Part VII) Test': section.xpath('.//efile:AverageHoursPerWeekRt/text()', namespaces=ns)[0] if section.xpath('.//efile:AverageHoursPerWeekRt/text()', namespaces=ns) else "Not Available",
             }
             individual_data = {'Name': name, 'Title': title}
             individual_data.update(compensation_data)
@@ -163,24 +164,61 @@ def fetch_data(ein, detailed_url):
 # Streamlit UI components
 
 def edit_excel_template(data, template_path):
+    def to_number(value):
+        try:
+            return float(value)
+        except ValueError:
+            return value
+    def to_proper_case(text):
+        return text.title()
+    def format_date(date_str):
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            return date_obj.strftime("%m/%d/%Y")
+        except ValueError:
+            return date_str
     workbook = openpyxl.load_workbook(template_path)
-    sheet = workbook["Template"]  # Assumes that the sheet name is "Template"
-    row = 9
+    sheet = workbook["Form 990 - Position Title"]  # Assumes that the sheet name is "Template"
+    sheet2 = workbook["PEER GROUP"]
+    #sheet3 = workbook["Form 990F - Position Title"]
+    sheet4 = workbook["Form 990PF - Position Title"]
+    row = 6
     for entry in data:
-        sheet[f"D{row}"] = entry["Organization_Name"]
-        sheet[f"E{row}"] = entry["EIN"]
-        sheet[f"F{row}"] = f"{entry['City']}, {entry['State']}"
-        sheet[f"K{row}"] = entry["Employee_Name"]
-        sheet[f"L{row}"] = entry["Title_Of_Position"]
-        sheet[f"M{row}"] = entry["Base Compensation"]
-        sheet[f"Q{row}"] = entry["Deferred Compensation"]
-        sheet[f"P{row}"] = entry["Other Compensation"]
-        sheet[f"G{row}"] = entry["W2E"]
-        sheet[f"H{row}"] = entry["Fiscal_Year_End"]
-        sheet[f"J{row}"] = entry["Total Assets"]
-        sheet[f"R{row}"] = entry["Nontaxable Benefits"]
-        sheet[f"S{row}"] = entry["Total Compensation"]
-        sheet[f"N{row}"] = entry["Bonus"]
+        sheet2[f"B{row}"] = to_proper_case(entry["Organization_Name"])
+        sheet2[f"C{row}"] = to_number(entry["EIN"])
+        sheet2[f"F{row}"] = to_proper_case(entry["City"]) 
+        sheet2[f"G{row}"] = entry["State"]
+        sheet2[f"E{row}"] = format_date(entry["W2E"])
+        sheet2[f"D{row}"] = format_date(entry["Fiscal_Year_End"])
+        sheet2[f"H{row}"] = to_number(entry["Total Assets"])
+        sheet2[f"I{row}"] = to_number(entry["Total Expenses"])
+        sheet2[f"J{row}"] = to_number(entry["Total Revenue"])
+        sheet2[f"N{row}"] = to_number(entry["Employee Count"])
+
+        sheet[f"H{row}"] = to_proper_case(entry["Employee_Name"])
+        sheet[f"I{row}"] = to_proper_case(entry["Title_Of_Position"])
+        sheet[f"P{row}"] = to_number(entry["Base Compensation"])
+        sheet[f"T{row}"] = to_number(entry["Deferred Compensation"])
+        sheet[f"S{row}"] = to_number(entry["Other Compensation"])
+        sheet[f"U{row}"] = to_number(entry["Nontaxable Benefits"])
+        #sheet[f"S{row}"] = to_number(entry["Total Compensation"])
+        sheet[f"Q{row}"] = to_number(entry["Bonus"])
+
+        sheet4[f"B{row}"] = to_proper_case(entry["Organization_Name"])
+        sheet4[f"C{row}"] = to_number(entry["EIN"])
+        sheet4[f"F{row}"] = to_proper_case(entry["City"]) 
+        sheet4[f"G{row}"] = entry["State"]
+        sheet4[f"E{row}"] = format_date(entry["W2E"])
+        sheet4[f"D{row}"] = format_date(entry["Fiscal_Year_End"])
+        sheet4[f"J{row}"] = to_number(entry["Total Assets"])
+        sheet4[f"K{row}"] = to_number(entry["Total Expenses"])
+        #sheet4[f"J{row}"] = to_number(entry["Total Revenue"])
+        sheet4[f"L{row}"] = to_number(entry["Employee Count"])
+        sheet4[f"H{row}"] = to_proper_case(entry["Employee_Name"])
+        sheet4[f"I{row}"] = to_proper_case(entry["Title_Of_Position"])
+        sheet4[f"O{row}"] = to_number(entry["Reportable Comp PF"])
+        sheet4[f"P{row}"] = to_number(entry["Benefits Comp PF"])
+        sheet4[f"Q{row}"] = to_number(entry["Expenses and Other Comp PF"])
         
         row += 1
     edited_file = BytesIO()
@@ -295,6 +333,11 @@ if st.button("Generate Final Output Chart", key='generate_chart_button'):
                     "Deferred Compensation": selected_person_data.get('Deferred Compensation', 'Not Available'),
                     "Nontaxable Benefits": selected_person_data.get('Nontaxable Benefits', 'Not Available'),
                     "Total Compensation": selected_person_data.get('Total Compensation', 'Not Available'),
+                    "Reportable Comp PF": selected_person_data.get('Reportable Compensation (PF)', 'Not Available'),
+                    "Benefits Comp PF": selected_person_data.get('Employee Benefit Amount (PF)', 'Not Available'),
+                    "Expenses and Other Comp PF": selected_person_data.get('Other Compensation (PF)', 'Not Available'),
+                    "Reportable Comp VII": selected_person_data.get('Reportable Compensation (Part VII)', 'Not Available'),
+                    "Other Comp VII": selected_person_data.get('Other Compensation (Part VII)', 'Not Available'),
                     # ... include additional fields as necessary ...
                 }
                 # Append the row to the final chart data in session state
@@ -307,7 +350,7 @@ if st.button("Generate Final Output Chart", key='generate_chart_button'):
     #st.dataframe(final_df)
 
     if final_chart_data:
-        edited_file = edit_excel_template(final_chart_data, '990TEMPLATE.xlsx')
+        edited_file = edit_excel_template(final_chart_data, '990TemplateNew.xlsm')
         st.download_button(label="Download Updated 990 Template", data=edited_file, file_name="990_template.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 # Reset functionality
 if st.button("Reset", key='reset_button'):
