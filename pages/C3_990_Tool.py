@@ -204,16 +204,16 @@ def edit_excel_template(data, template_path):
         #sheet[f"S{row}"] = to_number(entry["Total Compensation"])
         sheet[f"Q{row}"] = to_number(entry["Bonus"])
 
-        sheet4[f"B{row}"] = to_proper_case(entry["Organization_Name"])
-        sheet4[f"C{row}"] = to_number(entry["EIN"])
-        sheet4[f"F{row}"] = to_proper_case(entry["City"]) 
-        sheet4[f"G{row}"] = entry["State"]
-        sheet4[f"E{row}"] = format_date(entry["W2E"])
-        sheet4[f"D{row}"] = format_date(entry["Fiscal_Year_End"])
-        sheet4[f"J{row}"] = to_number(entry["Total Assets"])
-        sheet4[f"K{row}"] = to_number(entry["Total Expenses"])
+        #sheet4[f"B{row}"] = to_proper_case(entry["Organization_Name"])
+        #sheet4[f"C{row}"] = to_number(entry["EIN"])
+        #sheet4[f"F{row}"] = to_proper_case(entry["City"]) 
+        #sheet4[f"G{row}"] = entry["State"]
+        #sheet4[f"E{row}"] = format_date(entry["W2E"])
+        #sheet4[f"D{row}"] = format_date(entry["Fiscal_Year_End"])
+        #sheet4[f"J{row}"] = to_number(entry["Total Assets"])
+        #sheet4[f"K{row}"] = to_number(entry["Total Expenses"])
         #sheet4[f"J{row}"] = to_number(entry["Total Revenue"])
-        sheet4[f"L{row}"] = to_number(entry["Employee Count"])
+        #sheet4[f"L{row}"] = to_number(entry["Employee Count"])
         sheet4[f"H{row}"] = to_proper_case(entry["Employee_Name"])
         sheet4[f"I{row}"] = to_proper_case(entry["Title_Of_Position"])
         sheet4[f"O{row}"] = to_number(entry["Reportable Comp PF"])
@@ -325,11 +325,9 @@ if st.button("Generate Final Output Chart", key='generate_chart_button'):
                     "Total Expenses": organization_data.get('Total Expenses', 'Not Available'),
                     "Total Revenue": organization_data.get('Total Revenue', 'Not Available'),
                     "Employee Count": organization_data.get('Employee Count', 'Not Available'),
-                    "Base Compensation": selected_person_data.get('Base Compensation', 
-                selected_person_data.get('Reportable Compensation (PF)', 'Not Available')),
+                    "Base Compensation": selected_person_data.get('Base Compensation', 'Not Available'),
                     "Bonus": selected_person_data.get('Bonus', 'Not Available'),
-                    "Other Compensation": selected_person_data.get('Other Compensation',
-                selected_person_data.get('Other Compensation (PF)', 'Not Available')),
+                    "Other Compensation": selected_person_data.get('Other Compensation','Not Available'),
                     "Deferred Compensation": selected_person_data.get('Deferred Compensation', 'Not Available'),
                     "Nontaxable Benefits": selected_person_data.get('Nontaxable Benefits', 'Not Available'),
                     "Total Compensation": selected_person_data.get('Total Compensation', 'Not Available'),
