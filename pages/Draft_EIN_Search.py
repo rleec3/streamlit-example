@@ -7,7 +7,7 @@ from lxml import etree
 import openpyxl
 from io import BytesIO
 from datetime import datetime
-from mitosheet.streamlit.v1 import spreadsheet
+
 
 
 # Function to fetch years and corresponding URLs for the given EIN
