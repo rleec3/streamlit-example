@@ -242,6 +242,7 @@ def edit_excel_template(data, template_path):
 banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
 st.header("C3 990 Tool Edit/Upload")
+st.write("Instructions: Upload an Excel file (xlsx) with one sheet named *Sheet1*, and a single column (header titled *EIN*) with the target organizaiton EINS (<100, in the XX-XXXXX format)" )
 # Mito spreadsheet for EIN input
 uploaded_file = st.file_uploader("Upload EIN Excel file", type=["xlsx"])
 if uploaded_file:
