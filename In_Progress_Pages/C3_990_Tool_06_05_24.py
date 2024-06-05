@@ -171,11 +171,12 @@ def edit_excel_template(data, template_path):
             return value
     def to_proper_case(text):
         return text.title()
-    def to_date(value, date_format="%Y-%m-%d"):
+    def format_date(date_str):
         try:
-            return datetime.strptime(value, date_format)
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            return date_obj.strftime("%m/%d/%Y")
         except ValueError:
-            return value
+            return date_str
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook["Form 990 - Position Title"]  # Assumes that the sheet name is "Template"
     sheet2 = workbook["PEER GROUP"]
@@ -187,8 +188,8 @@ def edit_excel_template(data, template_path):
         sheet2[f"C{row}"] = to_number(entry["EIN"])
         sheet2[f"F{row}"] = to_proper_case(entry["City"]) 
         sheet2[f"G{row}"] = entry["State"]
-        sheet2[f"E{row}"] = to_date(entry["W2E"])
-        sheet2[f"D{row}"] = to_date((entry["Fiscal_Year_End"]))
+        sheet2[f"E{row}"] = format_date(entry["W2E"])
+        sheet2[f"D{row}"] = format_date(entry["Fiscal_Year_End"])
         sheet2[f"H{row}"] = to_number(entry["Total Assets"])
         sheet2[f"I{row}"] = to_number(entry["Total Expenses"])
         sheet2[f"J{row}"] = to_number(entry["Total Revenue"])
