@@ -7,9 +7,6 @@ from lxml import etree
 import openpyxl
 from io import BytesIO
 from datetime import datetime
-
-
-
 # Function to fetch years and corresponding URLs for the given EIN
 st.set_page_config(page_title='Nonprofit Search Tool', page_icon='C3_Only_Ball.png', layout='wide')
 def fetch_years(ein):
@@ -164,11 +161,6 @@ def fetch_data(ein, detailed_url):
             final_individuals_data.append(merged_data)
 
         return {'organization_data': organization_data, 'individuals_data': final_individuals_data}
-    
-
-
-
-
 # Streamlit UI components
 
 def edit_excel_template(data, template_path):
@@ -196,7 +188,7 @@ def edit_excel_template(data, template_path):
         sheet2[f"F{row}"] = to_proper_case(entry["City"]) 
         sheet2[f"G{row}"] = entry["State"]
         sheet2[f"E{row}"] = to_date(entry["W2E"])
-        sheet2[f"D{row}"] = to_date(entry["Fiscal_Year_End"])
+        sheet2[f"D{row}"] = to_date((entry["Fiscal_Year_End"]))
         sheet2[f"H{row}"] = to_number(entry["Total Assets"])
         sheet2[f"I{row}"] = to_number(entry["Total Expenses"])
         sheet2[f"J{row}"] = to_number(entry["Total Revenue"])
@@ -234,123 +226,130 @@ def edit_excel_template(data, template_path):
     return edited_file
 
 # Streamlit UI components
-
-
-# Streamlit UI components
-# Streamlit UI components
 banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
-st.header("C3 990 Tool Edit/Upload")
-st.write("Instructions: Upload an Excel file (xlsx) with one sheet named *Sheet1*, and a single column (header titled *EIN*) with the target organizaiton EINS (<100, in the XX-XXXXX format)" )
-# Mito spreadsheet for EIN input
-uploaded_file = st.file_uploader("Upload EIN Excel file", type=["xlsx"])
-if uploaded_file:
-   excel_data = pd.read_excel(uploaded_file, sheet_name='Sheet1')
-   eins = excel_data['EIN'].dropna().astype(str).tolist()
-   if eins:
-       num_orgs = len(eins)
-       st.write(f"Found {num_orgs} EINs in the uploaded file.")
-       # Allow user to select years to fetch
-       selected_years_option = st.selectbox("Select the year range to fetch data for", ["Most Recent Year", "Most Recent Two Years", "Past Three Years"])
-       # Initialize session state variables
-       st.session_state['organizations_data'] = []
-       st.session_state['all_individuals_data'] = []
-       st.session_state['year_data'] = {}
-       st.session_state['selected_years'] = {}
-       # Initialize year_data for each EIN
-       for i in range(num_orgs):
-           st.session_state['year_data'][str(i)] = fetch_years(eins[i])
-       # Button to confirm year selection and generate the final chart
-       if st.button("Generate Final Output Chart"):
-           # Fetch data for each EIN with progress indicator
-           st.session_state['organizations_data'] = []
-           st.session_state['all_individuals_data'] = []
-           progress_text = st.empty()
-           progress_bar = st.progress(0)
-           for i, ein in enumerate(eins):
-               try:
-                   if ein.strip() and st.session_state['year_data'][str(i)]:
-                       years = list(st.session_state['year_data'][str(i)].keys())
-                       if selected_years_option == "Most Recent Year":
-                           selected_years = [max(years)]
-                       elif selected_years_option == "Most Recent Two Years":
-                           selected_years = sorted(years, reverse=True)[:2]
-                       else:
-                           selected_years = sorted(years, reverse=True)[:3]
-                       for year in selected_years:
-                           st.session_state['selected_years'][str(i)] = year
-                           detailed_url = st.session_state['year_data'][str(i)][year][1]
-                           fetched_data = fetch_data(ein, detailed_url)
-                           st.session_state['organizations_data'].append(fetched_data['organization_data'])
-                           st.session_state['all_individuals_data'].append(fetched_data['individuals_data'])
-               except Exception as e:
-                   st.write(f"Error fetching data for EIN {ein}: {e}")
-                   st.session_state['organizations_data'].append({"EIN": ein, "Business Name": "Not Found"})
-                   st.session_state['all_individuals_data'].append([])
-               # Update progress indicator
-               progress = (i + 1) / num_orgs
-               progress_bar.progress(progress)
-               progress_text.text(f"{i + 1}/{num_orgs} EINs Parsed")
-           # Generate final output chart
-           final_chart_data = []
-           st.session_state['final_chart_data'] = []
-           existing_data_identifiers = {(row['EIN'], row['Employee_Name']) for row in st.session_state['final_chart_data']}
-           for i, organization_data in enumerate(st.session_state['organizations_data']):
-               individuals_data = st.session_state['all_individuals_data'][i]
-               # Calculate Total Compensation (PF) for each individual and sort
-               for individual_data in individuals_data:
-                   try:
-                       individual_data['Total Compensation (PF)'] = (
-                           float(individual_data.get('Reportable Compensation (PF)', 0)) +
-                           float(individual_data.get('Employee Benefit Amount (PF)', 0)) +
-                           float(individual_data.get('Other Compensation (PF)', 0))
-                       )
-                   except Exception as e:
-                       individual_data['Total Compensation (PF)'] = 0
-                       st.write(f"Error calculating Total Compensation (PF) for {individual_data.get('Name')}: {e}")
-                   # Ensure Total Compensation is numeric
-                   try:
-                       individual_data['Total Compensation'] = float(individual_data.get('Total Compensation', 0))
-                   except Exception as e:
-                       individual_data['Total Compensation'] = 0
-                       st.write(f"Error calculating Total Compensation for {individual_data.get('Name')}: {e}")
-               top_individuals = sorted(individuals_data, key=lambda x: x['Total Compensation (PF)'] + x['Total Compensation'], reverse=True)[:5]
-               for individual_data in top_individuals:
-                   name = individual_data['Name']
-                   title = individual_data['Title']
-                   if (organization_data.get('EIN'), name) not in existing_data_identifiers:
-                       chart_row = {
-                           "Organization_Name": organization_data.get('Business Name', 'Unknown'),
-                           "EIN": organization_data.get('EIN', 'Not Available'),
-                           "W2E": organization_data.get('WYearEnd', 'Not Available'),
-                           "Fiscal_Year_End": organization_data.get('Fiscal Year End', 'Not Available'),
-                           "City": organization_data.get('City', 'Not Available'),
-                           "State": organization_data.get('State', 'Not Available'),
-                           "Employee_Name": name,
-                           "Title_Of_Position": title,
-                           "Total Assets": organization_data.get('Total Assets EOY', 'Not Available'),
-                           "Total Expenses": organization_data.get('Total Expenses', 'Not Available'),
-                           "Total Revenue": organization_data.get('Total Revenue', 'Not Available'),
-                           "Employee Count": organization_data.get('Employee Count', 'Not Available'),
-                           "Base Compensation": individual_data.get('Base Compensation', 'Not Available'),
-                           "Bonus": individual_data.get('Bonus', 'Not Available'),
-                           "Other Compensation": individual_data.get('Other Compensation','Not Available'),
-                           "Deferred Compensation": individual_data.get('Deferred Compensation', 'Not Available'),
-                           "Nontaxable Benefits": individual_data.get('Nontaxable Benefits', 'Not Available'),
-                           "Total Compensation": individual_data.get('Total Compensation', 'Not Available'),
-                           "Reportable Comp PF": individual_data.get('Reportable Compensation (PF)', 'Not Available'),
-                           "Benefits Comp PF": individual_data.get('Employee Benefit Amount (PF)', 'Not Available'),
-                           "Expenses and Other Comp PF": individual_data.get('Other Compensation (PF)', 'Not Available'),
-                           "Total Compensation (PF)": individual_data['Total Compensation (PF)']
-                       }
-                       final_chart_data.append(chart_row)
-                       st.session_state['final_chart_data'].append(chart_row)
-           final_df = pd.DataFrame(st.session_state['final_chart_data'])
-           st.write(final_df)
-           if final_chart_data:
-               edited_file = edit_excel_template(final_chart_data, '990TemplateNewLg.xlsm')
-               st.download_button(label="Download Updated 990 Template", data=edited_file, file_name="990_template.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+st.header("C3 990 Tool")
+num_orgs = st.number_input("How many organizations do you want to fetch?", min_value=1, max_value=30, value=1, key="num_orgs")
+# Initialize or reset session state variables as needed
+if 'organizations_data' not in st.session_state:
+    st.session_state['organizations_data'] = []
+if 'all_individuals_data' not in st.session_state:
+    st.session_state['all_individuals_data'] = []
+if 'selected_incumbents' not in st.session_state:
+    st.session_state['selected_incumbents'] = {}
+if 'year_data' not in st.session_state:
+    st.session_state['year_data'] = {}
+if 'selected_years' not in st.session_state:
+    st.session_state['selected_years'] = {}
+# Initialize year_data for each organization
+for i in range(num_orgs):
+    if str(i) not in st.session_state['year_data']:
+        st.session_state['year_data'][str(i)] = {}
+# Generate EIN input fields and year dropdowns dynamically
+for i in range(num_orgs):
+    with st.container():
+        col1, col2 = st.columns(2)
+        ein = col1.text_input(f"Enter EIN {i+1}", key=f"ein_{i}")
+        
+        if ein.strip() and not st.session_state['year_data'][str(i)]:
+            st.session_state['year_data'][str(i)] = fetch_years(ein)
+        
+        if st.session_state['year_data'][str(i)]:
+            years = list(st.session_state['year_data'][str(i)].keys())
+            if years:
+                selected_year = col2.selectbox("Select a year", years, key=f"year_{i}")
+                st.session_state['selected_years'][str(i)] = selected_year
+# Single button to fetch data for all selected EINs and years
+if st.button("Fetch Data for All Selected", key='fetch_data_button'):
+    st.session_state['organizations_data'] = []
+    st.session_state['all_individuals_data'] = []
+    for i in range(num_orgs):
+        ein = st.session_state[f"ein_{i}"]
+        year = st.session_state['selected_years'][str(i)]
+        if ein.strip() and year:
+            detailed_url = st.session_state['year_data'][str(i)][year][1]
+            fetched_data = fetch_data(ein, detailed_url)
+            st.session_state['organizations_data'].append(fetched_data['organization_data'])
+            st.session_state['all_individuals_data'].append(fetched_data['individuals_data'])
+            # Display organization data and individuals data if available
+            #st.write(f"Organization data for {ein} in the year {year}:")
+            organization_data = fetched_data['organization_data']
+            st.subheader(organization_data.get('Business Name', 'Unknown'))
+            st.write(f"Organization data in the year {year}:")
+            st.json(fetched_data['organization_data'])
+            
+            if fetched_data['individuals_data']:
+                st.write(f"Individuals data in the year {year}:")
+                df_individuals = pd.DataFrame(fetched_data['individuals_data'])
+                st.dataframe(df_individuals)
+# Check if the data is fetched to display the dropdowns for selecting incumbents
+if st.session_state.get('organizations_data') and st.session_state.get('all_individuals_data'):
+    for i, individuals_data in enumerate(st.session_state['all_individuals_data']):
+        if individuals_data:
+            employee_options = ['None'] + [f"{person['Name']} ({person['Title']})" for person in individuals_data]
+            key = f"employee_{i}"
+            st.session_state.selected_incumbents[key] = st.selectbox(
+                f"Select an employee for organization {i+1}", options=employee_options, index=0, key=f"employee_{i}"
+            )
+# Button to generate the final output chart after confirmation of selections
+if st.button("Generate Final Output Chart", key='generate_chart_button'):
+    final_chart_data = []
+    if 'final_chart_data' not in st.session_state:
+        st.session_state['final_chart_data'] = []
+    
+    # To avoid duplicates, create a set of unique identifiers for each row based on EIN and name
+    existing_data_identifiers = {(row['EIN'], row['Employee_Name']) for row in st.session_state['final_chart_data']}
+    
+    for i, organization_data in enumerate(st.session_state['organizations_data']):
+        incumbent_key = f"employee_{i}"
+        if st.session_state.selected_incumbents.get(incumbent_key) and st.session_state.selected_incumbents[incumbent_key] != 'None':
+            name_title = st.session_state.selected_incumbents[incumbent_key].split(' (')
+            name = name_title[0]
+            title = name_title[1].rstrip(')')
+            selected_person_data = next(
+                (person for person in st.session_state['all_individuals_data'][i]
+                if f"{person['Name']} ({person['Title']})" == st.session_state.selected_incumbents[incumbent_key]), None
+            )
+            if selected_person_data and (organization_data.get('EIN'), name) not in existing_data_identifiers:
+                chart_row = {
+                    "Organization_Name": organization_data.get('Business Name', 'Unknown'),
+                    "EIN": organization_data.get('EIN', 'Not Available'),
+                    "Fiscal_Year_End": organization_data.get('Fiscal Year End', 'Not Available'),
+                    "W2E": organization_data.get('WYearEnd', 'Not Available'),
+                    "City": organization_data.get('City', 'Not Available'),
+                    "State": organization_data.get('State', 'Not Available'),
+                    "Employee_Name": name,
+                    "Title_Of_Position": title,
+                    "Total Assets": organization_data.get('Total Assets EOY', 'Not Available'),
+                    "Total Expenses": organization_data.get('Total Expenses', 'Not Available'),
+                    "Total Revenue": organization_data.get('Total Revenue', 'Not Available'),
+                    "Employee Count": organization_data.get('Employee Count', 'Not Available'),
+                    "Base Compensation": selected_person_data.get('Base Compensation', 'Not Available'),
+                    "Bonus": selected_person_data.get('Bonus', 'Not Available'),
+                    "Other Compensation": selected_person_data.get('Other Compensation','Not Available'),
+                    "Deferred Compensation": selected_person_data.get('Deferred Compensation', 'Not Available'),
+                    "Nontaxable Benefits": selected_person_data.get('Nontaxable Benefits', 'Not Available'),
+                    "Total Compensation": selected_person_data.get('Total Compensation', 'Not Available'),
+                    "Reportable Comp PF": selected_person_data.get('Reportable Compensation (PF)', 'Not Available'),
+                    "Benefits Comp PF": selected_person_data.get('Employee Benefit Amount (PF)', 'Not Available'),
+                    "Expenses and Other Comp PF": selected_person_data.get('Other Compensation (PF)', 'Not Available'),
+                    "Reportable Comp VII": selected_person_data.get('Reportable Compensation (Part VII)', 'Not Available'),
+                    "Other Comp VII": selected_person_data.get('Other Compensation (Part VII)', 'Not Available'),
+                    # ... include additional fields as necessary ...
+                }
+                # Append the row to the final chart data in session state
+                final_chart_data.append(chart_row)
+                st.session_state['final_chart_data'].append(chart_row)
+    
+    # Convert the final chart data to a DataFrame and display it
+    final_df = pd.DataFrame(st.session_state['final_chart_data'])
+    st.write(final_df)
+    #st.dataframe(final_df)
+
+    if final_chart_data:
+        edited_file = edit_excel_template(final_chart_data, '990TemplateNew.xlsm')
+        st.download_button(label="Download Updated 990 Template", data=edited_file, file_name="990_template.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 # Reset functionality
 if st.button("Reset", key='reset_button'):
-   st.session_state.clear()
-   st.rerun()
+    st.session_state.clear()
+    st.experimental_rerun()
