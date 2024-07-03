@@ -13,3 +13,5 @@ webdriver-manager
 chrome-version
 pychrome
 chromedriver
+openai
+TORCH
