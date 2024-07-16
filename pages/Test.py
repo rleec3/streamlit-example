@@ -193,6 +193,7 @@ def edit_excel_template(data, template_path, num_orgs, num_years):
     sheet = workbook["Form 990 - Position Title"]
     sheet2 = workbook["PEER GROUP"]
     sheet4 = workbook["Form 990PF - Position Title"]
+    sheet_setup = workbook["SETUP"]
     start_row_peer_group = 6  # The row to start inserting in PEER GROUP
     start_row_990 = 6  # The row to start inserting in Form 990 - Position Title
     start_row_990pf = 6  # The row to start inserting in Form 990PF - Position Title
@@ -235,6 +236,9 @@ def edit_excel_template(data, template_path, num_orgs, num_years):
         sheet2[f"I{start_row_peer_group}"] = to_number(entry.get("Total Expenses", "Not Available"))
         sheet2[f"J{start_row_peer_group}"] = to_number(entry.get("Total Revenue", "Not Available"))
         sheet2[f"N{start_row_peer_group}"] = to_number(entry.get("Employee Count", "Not Available"))
+        sheet2[f"K{start_row_peer_group}"] = to_number(entry["Total Assets"]) / 1000000
+        sheet2[f"L{start_row_peer_group}"] = to_number(entry["Total Expenses"]) / 1000000
+        sheet2[f"M{start_row_peer_group}"] = to_number(entry["Total Revenue"]) / 1000000
         start_row_peer_group += 1
         index_counter += 1
 
@@ -250,43 +254,53 @@ def edit_excel_template(data, template_path, num_orgs, num_years):
         sheet[f"G{start_row_990}"] = entry["State"]
         sheet[f"E{start_row_990}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
         sheet[f"D{start_row_990}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
-        sheet[f"J{start_row_990}"] = to_number(entry.get("Total Assets", "Not Available"))
-        sheet[f"K{start_row_990}"] = to_number(entry.get("Total Expenses", "Not Available"))
-        sheet[f"L{start_row_990}"] = to_number(entry.get("Total Revenue", "Not Available"))
+        sheet[f"J{start_row_990}"] = to_number(entry["Total Assets"]) / 1000000
+        sheet[f"K{start_row_990}"] = to_number(entry["Total Expenses"]) / 1000000
+        sheet[f"L{start_row_990}"] = to_number(entry["Total Revenue"]) / 1000000
         sheet[f"M{start_row_990}"] = to_number(entry.get("Employee Count", "Not Available"))
 
         sheet[f"H{start_row_990}"] = to_proper_case(entry["Employee_Name"])
         sheet[f"I{start_row_990}"] = to_proper_case(entry["Title_Of_Position"])
-        sheet[f"P{start_row_990}"] = to_number(entry["Base Compensation"])
-        sheet[f"T{start_row_990}"] = to_number(entry["Deferred Compensation"])
-        sheet[f"S{start_row_990}"] = to_number(entry["Other Compensation"])
-        sheet[f"U{start_row_990}"] = to_number(entry["Nontaxable Benefits"])
-        sheet[f"Q{start_row_990}"] = to_number(entry["Bonus"])
+        sheet[f"P{start_row_990}"] = to_number(entry["Base Compensation"]) / 1000
+        sheet[f"T{start_row_990}"] = to_number(entry["Deferred Compensation"]) / 1000
+        sheet[f"S{start_row_990}"] = to_number(entry["Other Compensation"]) / 1000
+        sheet[f"U{start_row_990}"] = to_number(entry["Nontaxable Benefits"]) / 1000
+        sheet[f"Q{start_row_990}"] = to_number(entry["Bonus"]) / 1000
+        sheet[f"R{start_row_990}"] = (to_number(entry["Bonus"]) / 1000) + (to_number(entry["Base Compensation"]) / 1000)
+        sheet[f"V{start_row_990}"] = (to_number(entry["Bonus"]) / 1000) + (to_number(entry["Base Compensation"]) / 1000) + (to_number(entry["Other Compensation"]) / 1000) + (to_number(entry["Deferred Compensation"]) / 1000) + to_number(entry["Nontaxable Benefits"]) / 1000
 
         insert_blank_row_with_formatting(sheet4, start_row_990pf)
 
-        sheet[f"C{start_row_990pf}"] = to_number(entry["EIN"])
-        sheet[f"B{start_row_990pf}"] = to_proper_case(entry["Organization_Name"])
-        sheet[f"F{start_row_990pf}"] = to_proper_case(entry["City"])
-        sheet[f"G{start_row_990pf}"] = entry["State"]
-        sheet[f"E{start_row_990pf}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
-        sheet[f"D{start_row_990pf}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
-        sheet[f"J{start_row_990pf}"] = to_number(entry.get("Total Assets", "Not Available"))
-        sheet[f"K{start_row_990pf}"] = to_number(entry.get("Total Expenses", "Not Available"))
-        sheet[f"L{start_row_990pf}"] = to_number(entry.get("Total Revenue", "Not Available"))
-        sheet[f"M{start_row_990pf}"] = to_number(entry.get("Employee Count", "Not Available"))
+        sheet4[f"C{start_row_990pf}"] = to_number(entry["EIN"])
+        sheet4[f"B{start_row_990pf}"] = to_proper_case(entry["Organization_Name"])
+        sheet4[f"F{start_row_990pf}"] = to_proper_case(entry["City"])
+        sheet4[f"G{start_row_990pf}"] = entry["State"]
+        sheet4[f"E{start_row_990pf}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
+        sheet4[f"D{start_row_990pf}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
+        sheet4[f"J{start_row_990pf}"] = to_number(entry["Total Assets"]) / 1000000
+        sheet4[f"K{start_row_990pf}"] = to_number(entry["Total Expenses"]) / 1000000
+        
+        sheet4[f"L{start_row_990pf}"] = to_number(entry.get("Employee Count", "Not Available"))
 
         sheet4[f"H{start_row_990pf}"] = to_proper_case(entry["Employee_Name"])
         sheet4[f"I{start_row_990pf}"] = to_proper_case(entry["Title_Of_Position"])
-        sheet4[f"O{start_row_990pf}"] = to_number(entry["Reportable Comp PF"])
-        sheet4[f"P{start_row_990pf}"] = to_number(entry["Benefits Comp PF"])
-        sheet4[f"Q{start_row_990pf}"] = to_number(entry["Expenses and Other Comp PF"])
+        sheet4[f"O{start_row_990pf}"] = to_number(entry["Reportable Comp PF"]) / 1000
+        sheet4[f"P{start_row_990pf}"] = to_number(entry["Benefits Comp PF"]) / 1000
+        sheet4[f"Q{start_row_990pf}"] = to_number(entry["Expenses and Other Comp PF"]) / 1000
+        sheet4[f"R{start_row_990pf}"] = to_number(entry["Expenses and Other Comp PF"]) / 1000 +  (to_number(entry["Benefits Comp PF"]) / 1000) + (to_number(entry["Reportable Comp PF"]) / 1000)
 
         start_row_990 += 1
         start_row_990pf += 1
 
         index_counter += 1
 
+    sheet_setup["C4"] = to_proper_case(target_org_data["Business Name"])
+    sheet_setup["C9"] = to_proper_case(target_org_data["City"])
+    sheet_setup["C10"] = target_org_data["State"]
+    sheet_setup["C11"] = to_number(target_org_data["Total Assets EOY"]) 
+    sheet_setup["C12"] = to_number(target_org_data["Total Revenue"]) 
+    sheet_setup["C13"] = to_number(target_org_data["Total Expenses"]) 
+    sheet_setup["C14"] = to_number(target_org_data["Employee Count"])
     # Set row height for all sheets except SETUP
     for sheet_name in workbook.sheetnames:
         if sheet_name != "SETUP":
@@ -322,7 +336,8 @@ st.write("Instructions: Copy and paste a list of EINs below (one per line) and s
 
 # User inputs EINs directly
 eins_input = st.text_area("Paste EINs here (one per line):", height=200)
-if eins_input:
+target_ein_input = st.text_input("Enter Target Org EIN:")
+if eins_input or target_ein_input:
     eins = [ein.strip() for ein in eins_input.split('\n') if ein.strip()]
     num_orgs = len(eins)
     st.write(f"Found {num_orgs} EINs in the input.")
@@ -337,6 +352,14 @@ if eins_input:
 
     for i in range(num_orgs):
         st.session_state['year_data'][str(i)] = fetch_years(eins[i])
+
+    target_org_data = None
+    if target_ein_input:
+        target_year_data = fetch_years(target_ein_input)
+        if target_year_data:
+            target_years = sorted(target_year_data.keys(), reverse=True)[:num_years]
+            detailed_url = target_year_data[target_years[0]][1]
+            target_org_data = fetch_data(target_ein_input, detailed_url)['organization_data']
 
     if st.button("Generate Final Output Chart"):
         st.session_state['organizations_data'] = []
@@ -406,15 +429,15 @@ if eins_input:
                         "Total Expenses": organization_data.get('Total Expenses', 'Not Available'),
                         "Total Revenue": organization_data.get('Total Revenue', 'Not Available'),
                         "Employee Count": organization_data.get('Employee Count', 'Not Available'),
-                        "Base Compensation": individual_data.get('Base Compensation', 'Not Available'),
-                        "Bonus": individual_data.get('Bonus', 'Not Available'),
-                        "Other Compensation": individual_data.get('Other Compensation','Not Available'),
-                        "Deferred Compensation": individual_data.get('Deferred Compensation', 'Not Available'),
-                        "Nontaxable Benefits": individual_data.get('Nontaxable Benefits', 'Not Available'),
-                        "Total Compensation": individual_data.get('Total Compensation', 'Not Available'),
-                        "Reportable Comp PF": individual_data.get('Reportable Compensation (PF)', 'Not Available'),
-                        "Benefits Comp PF": individual_data.get('Employee Benefit Amount (PF)', 'Not Available'),
-                        "Expenses and Other Comp PF": individual_data.get('Other Compensation (PF)', 'Not Available'),
+                        "Base Compensation": individual_data.get('Base Compensation', '0'),
+                        "Bonus": individual_data.get('Bonus', '0'),
+                        "Other Compensation": individual_data.get('Other Compensation','0'),
+                        "Deferred Compensation": individual_data.get('Deferred Compensation', '0'),
+                        "Nontaxable Benefits": individual_data.get('Nontaxable Benefits', '0'),
+                        "Total Compensation": individual_data.get('Total Compensation', '0'),
+                        "Reportable Comp PF": individual_data.get('Reportable Compensation (PF)', '0'),
+                        "Benefits Comp PF": individual_data.get('Employee Benefit Amount (PF)', '0'),
+                        "Expenses and Other Comp PF": individual_data.get('Other Compensation (PF)', '0'),
                         "Total Compensation (PF)": individual_data['Total Compensation (PF)']
                     }
                     final_chart_data.append(chart_row)
