@@ -141,7 +141,7 @@ def fetch_data(ein, detailed_url):
 
         return {'organization_data': organization_data, 'individuals_data': final_individuals_data}
 
-def edit_excel_template(data, template_path, num_orgs, num_years):
+def edit_excel_template(data, template_path, num_entries):
     def to_number(value):
         try:
             return float(value)
@@ -157,135 +157,81 @@ def edit_excel_template(data, template_path, num_orgs, num_years):
         except ValueError:
             return value
 
-    def copy_row_formatting_and_values(sheet, source_row, target_row):
+    def copy_row(sheet, source_row, target_row):
         for col in range(1, sheet.max_column + 1):
             col_letter = get_column_letter(col)
             source_cell = sheet[f"{col_letter}{source_row}"]
             target_cell = sheet[f"{col_letter}{target_row}"]
-            target_cell._style = copy(source_cell._style)
-            target_cell.font = copy(source_cell.font)
-            target_cell.border = copy(source_cell.border)
-            target_cell.fill = copy(source_cell.fill)
-            target_cell.number_format = copy(source_cell.number_format)
-            target_cell.protection = copy(source_cell.protection)
-            target_cell.alignment = copy(source_cell.alignment)
-            target_cell.value = source_cell.value
-
-    def insert_blank_row_with_formatting(sheet, row):
-        sheet.insert_rows(row)
-        copy_row_formatting_and_values(sheet, row + 1, row)
-
-    def is_merged_cell(sheet, row, col):
-        cell = f"{get_column_letter(col)}{row}"
-        for merged_range in sheet.merged_cells.ranges:
-            if cell in merged_range:
-                return True
-        return False
-
-    def get_top_left_merged_cell(sheet, row, col):
-        cell = f"{get_column_letter(col)}{row}"
-        for merged_range in sheet.merged_cells.ranges:
-            if cell in merged_range:
-                return merged_range.min_row, merged_range.min_col
-        return row, col
+            if source_cell.has_style:
+                target_cell._style = copy(source_cell._style)
+            if source_cell.data_type == "f":
+                target_cell.value = f"={source_cell.value[1:]}"  # Copy formula, removing the leading '='
+            else:
+                target_cell.value = source_cell.value
 
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook["Form 990 - Position Title"]
     sheet2 = workbook["PEER GROUP"]
     sheet4 = workbook["Form 990PF - Position Title"]
-    start_row_peer_group = 6  # The row to start inserting in PEER GROUP
-    start_row_990 = 6  # The row to start inserting in Form 990 - Position Title
-    start_row_990pf = 6  # The row to start inserting in Form 990PF - Position Title
+    start_row_peer_group = 6  # The row to start copying from in PEER GROUP
+    start_row_990 = 6  # The row to start copying from in Form 990 - Position Title
+    start_row_990pf = 6  # The row to start copying from in Form 990PF - Position Title
     index_counter = 1  # Index counter for PEER GROUP
-
-    unique_ein_years = set()
-    entries_to_insert = []
-
-    # Collect unique EIN/year entries
-    for entry in data:
-        unique_key = (entry["EIN"], entry["W2E"])
-        if unique_key not in unique_ein_years:
-            unique_ein_years.add(unique_key)
-            entries_to_insert.append(entry)
+    index_map = {}  # Map to store unique index for each W2E/EIN combination
 
     # Insert the required number of rows into the PEER GROUP tab
-    for _ in range(len(entries_to_insert)):
-        insert_blank_row_with_formatting(sheet2, start_row_peer_group)
+    for _ in range(num_entries):
+        sheet2.insert_rows(start_row_peer_group + 1)
+        copy_row(sheet2, start_row_peer_group, start_row_peer_group + 1)
         start_row_peer_group += 1
 
     # Fill in the PEER GROUP tab with data
-    start_row_peer_group = 6  # Reset to the starting row for data insertion
-    for entry in entries_to_insert:
-        sheet2[f"A{start_row_peer_group}"] = index_counter
-        sheet2[f"B{start_row_peer_group}"] = to_proper_case(entry["Organization_Name"])
-        
-        # Handle merged cells
-        if not is_merged_cell(sheet2, start_row_peer_group, 3):
+    start_row_peer_group = 6
+    for entry in data:
+        w2e_ein_combination = (entry["W2E"], entry["EIN"])
+        if w2e_ein_combination not in index_map:
+            index_map[w2e_ein_combination] = index_counter
+            sheet2[f"A{start_row_peer_group}"] = index_counter
+            sheet2[f"B{start_row_peer_group}"] = to_proper_case(entry["Organization_Name"])
             sheet2[f"C{start_row_peer_group}"] = to_number(entry["EIN"])
-        else:
-            top_left_row, top_left_col = get_top_left_merged_cell(sheet2, start_row_peer_group, 3)
-            if top_left_row == start_row_peer_group and top_left_col == 3:
-                sheet2[f"C{start_row_peer_group}"] = to_number(entry["EIN"])
-
-        sheet2[f"F{start_row_peer_group}"] = to_proper_case(entry["City"])
-        sheet2[f"G{start_row_peer_group}"] = entry["State"]
-        sheet2[f"E{start_row_peer_group}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
-        sheet2[f"D{start_row_peer_group}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
-        sheet2[f"H{start_row_peer_group}"] = to_number(entry.get("Total Assets", "Not Available"))
-        sheet2[f"I{start_row_peer_group}"] = to_number(entry.get("Total Expenses", "Not Available"))
-        sheet2[f"J{start_row_peer_group}"] = to_number(entry.get("Total Revenue", "Not Available"))
-        sheet2[f"N{start_row_peer_group}"] = to_number(entry.get("Employee Count", "Not Available"))
-        start_row_peer_group += 1
-        index_counter += 1
+            sheet2[f"F{start_row_peer_group}"] = to_proper_case(entry["City"])
+            sheet2[f"G{start_row_peer_group}"] = entry["State"]
+            sheet2[f"E{start_row_peer_group}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
+            sheet2[f"D{start_row_peer_group}"] = to_date(entry.get("Fiscal Year End", "Not Available"))
+            sheet2[f"H{start_row_peer_group}"] = to_number(entry.get("Total Assets EOY", "Not Available"))
+            sheet2[f"I{start_row_peer_group}"] = to_number(entry.get("Total Expenses", "Not Available"))
+            sheet2[f"J{start_row_peer_group}"] = to_number(entry.get("Total Revenue", "Not Available"))
+            sheet2[f"N{start_row_peer_group}"] = to_number(entry.get("Employee Count", "Not Available"))
+            start_row_peer_group += 1
+            index_counter += 1
 
     # Generate entries for Form 990 and Form 990PF with individual data
-    index_counter = 1
     for entry in data:
-        #for individual in entry.get('individuals_data', []):
-        insert_blank_row_with_formatting(sheet, start_row_990)
+        w2e_ein_combination = (entry["W2E"], entry["EIN"])
+        current_index = index_map[w2e_ein_combination]
+        for individual in entry.get('individuals_data', []):
+            sheet.insert_rows(start_row_990 + 1)
+            copy_row(sheet, start_row_990, start_row_990 + 1)
+            sheet[f"A{start_row_990}"] = current_index
+            sheet[f"H{start_row_990}"] = to_proper_case(individual["Name"])
+            sheet[f"I{start_row_990}"] = to_proper_case(individual["Title"])
+            sheet[f"P{start_row_990}"] = to_number(individual.get("Base Compensation", "Not Available"))
+            sheet[f"T{start_row_990}"] = to_number(individual.get("Deferred Compensation", "Not Available"))
+            sheet[f"S{start_row_990}"] = to_number(individual.get("Other Compensation", "Not Available"))
+            sheet[f"U{start_row_990}"] = to_number(individual.get("Nontaxable Benefits", "Not Available"))
+            sheet[f"Q{start_row_990}"] = to_number(individual.get("Bonus", "Not Available"))
 
-        sheet[f"C{start_row_990}"] = to_number(entry["EIN"])
-        sheet[f"B{start_row_990}"] = to_proper_case(entry["Organization_Name"])
-        sheet[f"F{start_row_990}"] = to_proper_case(entry["City"])
-        sheet[f"G{start_row_990}"] = entry["State"]
-        sheet[f"E{start_row_990}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
-        sheet[f"D{start_row_990}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
-        sheet[f"J{start_row_990}"] = to_number(entry.get("Total Assets", "Not Available"))
-        sheet[f"K{start_row_990}"] = to_number(entry.get("Total Expenses", "Not Available"))
-        sheet[f"L{start_row_990}"] = to_number(entry.get("Total Revenue", "Not Available"))
-        sheet[f"M{start_row_990}"] = to_number(entry.get("Employee Count", "Not Available"))
+            sheet4.insert_rows(start_row_990pf + 1)
+            copy_row(sheet4, start_row_990pf, start_row_990pf + 1)
+            sheet4[f"A{start_row_990pf}"] = current_index
+            sheet4[f"H{start_row_990pf}"] = to_proper_case(individual["Name"])
+            sheet4[f"I{start_row_990pf}"] = to_proper_case(individual["Title"])
+            sheet4[f"O{start_row_990pf}"] = to_number(individual.get("Reportable Compensation (PF)", "Not Available"))
+            sheet4[f"P{start_row_990pf}"] = to_number(individual.get("Employee Benefit Amount (PF)", "Not Available"))
+            sheet4[f"Q{start_row_990pf}"] = to_number(individual.get("Other Compensation (PF)", "Not Available"))
 
-        sheet[f"H{start_row_990}"] = to_proper_case(entry["Employee_Name"])
-        sheet[f"I{start_row_990}"] = to_proper_case(entry["Title_Of_Position"])
-        sheet[f"P{start_row_990}"] = to_number(entry["Base Compensation"])
-        sheet[f"T{start_row_990}"] = to_number(entry["Deferred Compensation"])
-        sheet[f"S{start_row_990}"] = to_number(entry["Other Compensation"])
-        sheet[f"U{start_row_990}"] = to_number(entry["Nontaxable Benefits"])
-        sheet[f"Q{start_row_990}"] = to_number(entry["Bonus"])
-
-        insert_blank_row_with_formatting(sheet4, start_row_990pf)
-
-        sheet[f"C{start_row_990pf}"] = to_number(entry["EIN"])
-        sheet[f"B{start_row_990pf}"] = to_proper_case(entry["Organization_Name"])
-        sheet[f"F{start_row_990pf}"] = to_proper_case(entry["City"])
-        sheet[f"G{start_row_990pf}"] = entry["State"]
-        sheet[f"E{start_row_990pf}"] = to_date(entry.get("W2E", entry.get("WYearEnd", "Not Available")))
-        sheet[f"D{start_row_990pf}"] = to_date(entry.get("Fiscal_Year_End", "Not Available"))
-        sheet[f"J{start_row_990pf}"] = to_number(entry.get("Total Assets", "Not Available"))
-        sheet[f"K{start_row_990pf}"] = to_number(entry.get("Total Expenses", "Not Available"))
-        sheet[f"L{start_row_990pf}"] = to_number(entry.get("Total Revenue", "Not Available"))
-        sheet[f"M{start_row_990pf}"] = to_number(entry.get("Employee Count", "Not Available"))
-
-        sheet4[f"H{start_row_990pf}"] = to_proper_case(entry["Employee_Name"])
-        sheet4[f"I{start_row_990pf}"] = to_proper_case(entry["Title_Of_Position"])
-        sheet4[f"O{start_row_990pf}"] = to_number(entry["Reportable Comp PF"])
-        sheet4[f"P{start_row_990pf}"] = to_number(entry["Benefits Comp PF"])
-        sheet4[f"Q{start_row_990pf}"] = to_number(entry["Expenses and Other Comp PF"])
-
-        start_row_990 += 1
-        start_row_990pf += 1
-
-        index_counter += 1
+            start_row_990 += 1
+            start_row_990pf += 1
 
     # Set row height for all sheets except SETUP
     for sheet_name in workbook.sheetnames:
@@ -298,21 +244,6 @@ def edit_excel_template(data, template_path, num_orgs, num_years):
     workbook.save(edited_file)
     edited_file.seek(0)
     return edited_file
-
-# Additional helper functions
-def is_merged_cell(sheet, row, col):
-    cell = f"{get_column_letter(col)}{row}"
-    for merged_range in sheet.merged_cells.ranges:
-        if cell in merged_range:
-            return True
-    return False
-
-def get_top_left_merged_cell(sheet, row, col):
-    cell = f"{get_column_letter(col)}{row}"
-    for merged_range in sheet.merged_cells.ranges:
-        if cell in merged_range:
-            return merged_range.min_row, merged_range.min_col
-    return row, col
 
 # Streamlit UI components
 banner_path = 'Horizontal_Banner_NoSC.png'
@@ -354,6 +285,8 @@ if eins_input:
                         fetched_data = fetch_data(ein, detailed_url)
                         organization_data = fetched_data['organization_data']
                         organization_data['individuals_data'] = fetched_data['individuals_data']
+                        organization_data['W2E'] = fetched_data['organization_data'].get("WYearEnd", "Not Available")
+                        organization_data['Fiscal Year End'] = fetched_data['organization_data'].get("Fiscal Year End", "Not Available")
                         st.session_state['organizations_data'].append(organization_data)
             except Exception as e:
                 st.write(f"Error fetching data for EIN {ein}: {e}")
@@ -408,7 +341,7 @@ if eins_input:
                         "Employee Count": organization_data.get('Employee Count', 'Not Available'),
                         "Base Compensation": individual_data.get('Base Compensation', 'Not Available'),
                         "Bonus": individual_data.get('Bonus', 'Not Available'),
-                        "Other Compensation": individual_data.get('Other Compensation','Not Available'),
+                        "Other Compensation": individual_data.get('Other Compensation', 'Not Available'),
                         "Deferred Compensation": individual_data.get('Deferred Compensation', 'Not Available'),
                         "Nontaxable Benefits": individual_data.get('Nontaxable Benefits', 'Not Available'),
                         "Total Compensation": individual_data.get('Total Compensation', 'Not Available'),
@@ -424,9 +357,9 @@ if eins_input:
         st.write(final_df)
 
         # Calculate the number of rows needed for PEER GROUP tab
-        num_unique_entries = len({(entry["EIN"], entry["W2E"]) for entry in st.session_state['final_chart_data']})
+        num_entries = num_orgs * num_years
         if final_chart_data:
-            edited_file = edit_excel_template(st.session_state['final_chart_data'], '990Template2.xlsm', num_orgs, num_years)
+            edited_file = edit_excel_template(st.session_state['final_chart_data'], '990Template2.xlsm', num_entries)
             st.download_button(label="Download Updated 990 Template", data=edited_file, file_name="990_template.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 if st.button("Reset", key='reset_button'):
