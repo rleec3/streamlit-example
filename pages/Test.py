@@ -333,7 +333,7 @@ banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
 st.header("C3 990 Tool Edit/Upload")
 st.write("Instructions: Copy and paste a list of EINs below (one per line) and select the desired number of years to fetch data for each organization.")
-
+st.write("Note: Need to manually copy aging formula, and aged data formulas down.")
 # User inputs EINs directly
 eins_input = st.text_area("Paste EINs here (one per line):", height=200)
 target_ein_input = st.text_input("Enter Target Org EIN:")
