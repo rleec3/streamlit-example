@@ -12,12 +12,12 @@ from streamlit_shadcn_ui import slider, input, textarea, radio_group, switch
 #     st.markdown(f.read())
 
 # ui.date_picker()
-st.set_page_config(page_title='Home', page_icon='C3_Only_Ball.png', layout='wide')
+st.set_page_config(page_title='Questions and Answers', page_icon='C3_Only_Ball.png', layout='wide')
 banner_path = 'Horizontal_Banner_NoSC.png'
 st.image(banner_path, width=400)
 st.header("C3 Toolbase")
-ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
-st.caption("A  component library for any tools drafted, under development, or finalized for C3 Nonprofit Consulting.")
+#ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
+st.caption("Insturctions, Questions, and Answers.")
 
 
 
