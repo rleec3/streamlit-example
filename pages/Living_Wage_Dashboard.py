@@ -169,7 +169,7 @@ if 'Other Necessities ' in healthcare_credit_df.columns:
         <span style='font-weight: normal; font-size: 30px;'>Annualized Thriving Wage + Healthcare Credit</span> <!-- Text with smaller font size -->
     </h1>
     """, unsafe_allow_html=True)  
-    st.caption("Note: Chart data below used in client deliverables.")
+    st.caption("Note: Data below used in client deliverables.")
     st.dataframe(thriving_wage_df)
 
 
