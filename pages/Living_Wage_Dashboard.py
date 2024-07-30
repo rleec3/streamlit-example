@@ -56,7 +56,7 @@ col1, col2 = st.columns([2, 2])  # Here, col1 is three times wider than col2
 
 # Filter selection sidebar
 with st.sidebar:
-    data_type = st.radio("Select Data Type", ("County", "Metro"))
+    data_type = st.radio("Selected Data Type:", ["Metro"], index=0)
     selected_state = st.selectbox("Select State", county_data['State abv.'].unique())
     use_default_filters = st.checkbox("Default Providers and Dependents")
     
