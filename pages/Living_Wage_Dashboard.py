@@ -52,19 +52,20 @@ st.caption('Source: Economic Policy Institute Family Budget Calculator, January 
 col1, col2 = st.columns([2, 2])  # Here, col1 is three times wider than col2
 
 # Place a caption in each column
-with col1:
-    st.caption('⚪ : Data not utilized in client deliverables')
-
-with col2:
-    st.caption('🟢 : Data utilized in client deliverables')
 #ui.badges(badge_list=[ ("Under Construction", "destructive")], class_name="flex gap-2", key="main_badges1")
 
 # Filter selection sidebar
 with st.sidebar:
     data_type = st.radio("Select Data Type", ("County", "Metro"))
     selected_state = st.selectbox("Select State", county_data['State abv.'].unique())
-    provider_filter = st.multiselect("Select Providers", [1, 2])
-    dependents_filter = st.multiselect("Select Dependents", [0, 1, 2, 3, 4])
+    use_default_filters = st.checkbox("Default Providers and Dependents")
+    
+    if use_default_filters:
+        provider_filter = [1, 2]
+        dependents_filter = [0, 1, 2]
+    else:
+        provider_filter = st.multiselect("Select Providers", [1, 2])
+        dependents_filter = st.multiselect("Select Dependents", [0, 1, 2, 3, 4])
 
     # Dynamic selection for monetary columns to include in total
     #monetary_columns = ['Housing', 'Food', 'Transportation', 'Healthcare', 'Other Necessities ', 'Childcare', 'Taxes']
@@ -168,6 +169,7 @@ if 'Other Necessities ' in healthcare_credit_df.columns:
         <span style='font-weight: normal; font-size: 30px;'>Annualized Thriving Wage + Healthcare Credit</span> <!-- Text with smaller font size -->
     </h1>
     """, unsafe_allow_html=True)  
+    st.caption("Note: Chart data below used in client deliverables.")
     st.dataframe(thriving_wage_df)
 
 
